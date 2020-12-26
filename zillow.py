@@ -8,7 +8,7 @@ import time
 
 BED_COUNT = 2
 BATH_COUNT = 2
-MAX_PRICE_IN_WV = 215000
+MAX_PRICE = 215000
 NEW_CONSTRUCTION = "New construction"
 PLUS = "+"
 
@@ -106,7 +106,7 @@ def get_data_from_json(raw_json_data):
             if title != NEW_CONSTRUCTION:
               continue
 
-            if unformatted_price > MAX_PRICE_IN_WV:
+            if unformatted_price > MAX_PRICE:
               continue
 
             # If there is plus at the end of the price this means it is not a final price
