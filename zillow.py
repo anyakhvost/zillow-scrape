@@ -8,9 +8,14 @@ import time
 
 BED_COUNT = 2
 BATH_COUNT = 2
-MAX_PRICE = 215000
-NEW_CONSTRUCTION = "New construction"
+MAX_PRICE = 300000
+
 PLUS = "+"
+NEW_CONSTRUCTION = "New construction"
+MULTI_FAMILY = "Multi-family home for sale"
+
+# Change this value
+FILTER = MULTI_FAMILY
 
 def clean(text):
     if text:
@@ -36,6 +41,9 @@ def create_url(zipcode, filter, page):
         url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/days_sort".format(zipcode)
     elif filter == "cheapest":
         url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/pricea_sort/".format(zipcode)
+    # Some multi homes do not specify bedroom count
+    elif filter == "Multi-family home for sale":
+        url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, page)
     else:
         url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}-_beds/{2}-_baths/{3}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, BED_COUNT, BATH_COUNT, page)
     print(url)
@@ -103,7 +111,7 @@ def get_data_from_json(raw_json_data):
             zestimate_rent = properties.get('hdpData').get('homeInfo').get('rentZestimate')
             price_to_rent_ratio = ""
 
-            if title != NEW_CONSTRUCTION:
+            if title != FILTER:
               continue
 
             if unformatted_price > MAX_PRICE:
@@ -151,7 +159,7 @@ def unique(list):
 def parse(zipcode, filter=None):
     final_data = []
     for page in range(1, 4):
-      url = create_url(zipcode, filter, page)
+      url = create_url(zipcode, FILTER, page)
       response = get_response(url)
 
       if not response:
