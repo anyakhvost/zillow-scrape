@@ -8,14 +8,14 @@ import time
 
 BED_COUNT = 2
 BATH_COUNT = 2
-MAX_PRICE = 300000
+MAX_PRICE = 200000
 
 PLUS = "+"
 NEW_CONSTRUCTION = "New construction"
 MULTI_FAMILY = "Multi-family home for sale"
 
 # Change this value
-FILTER = MULTI_FAMILY
+FILTER = NEW_CONSTRUCTION
 
 def clean(text):
     if text:
@@ -118,10 +118,10 @@ def get_data_from_json(raw_json_data):
               continue
 
             # If there is plus at the end of the price this means it is not a final price
-            if PLUS in price:
-              continue
+            # if PLUS in price:
+            #   continue
 
-            print(properties)
+            #print(properties)
             if zestimate_rent and zestimate:
               price_to_rent_ratio = round(zestimate_rent / zestimate * 100, 2)
 
