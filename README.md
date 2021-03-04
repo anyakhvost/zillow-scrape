@@ -9,6 +9,11 @@ virtualenv .venv --python python3
 ```
 
 2. Activate Virtualenv
+
+```
+source .venv/bin/activate
+```
+
 ```
 
 in windows:
@@ -27,9 +32,21 @@ pip install -r requirements-python3.txt
 ## Usage
 
 ```
-python zillow.py <zipcode>
+python zillow.py <zipcode> <home_type>
 ```
 This will create a CSV file in the same directory.
+Home types: any, new_construction, multi_familty
+You can pass a list of zipcodes separated by comma (no space between zipcodes):
+```
+python zillow.py 25420,23420 any
+```
+
+## To read CSV in Ruby, start IRB:
+```
+require 'csv'
+table = CSV.parse(File.read("/Users/anyaroltsch/Desktop/florida_zip_codes.csv"), headers: true)
+table.by_col[0].join(",")
+```
 
 ## Git Usage
 
@@ -60,6 +77,8 @@ git commit -m <"something">
 git push origin <branch name no quoute>
 ```
 
+### WV Zip Codes
+25428,25403,25404,25405,25401,25402,25413,25419,25421,25420,25427,25430,25432,25438,25441,25443,25442,25446,25410,25414,25425
 
 
 
