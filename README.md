@@ -32,12 +32,13 @@ pip install -r requirements-python3.txt
 ## Usage
 
 ```
-python zillow.py <zipcode>
+python zillow.py <zipcode> <home_type>
 ```
 This will create a CSV file in the same directory.
+Home types: any, new_construction, multi_familty
 You can pass a list of zipcodes separated by comma (no space between zipcodes):
 ```
-python zillow.py 25420,23420
+python zillow.py 25420,23420 any
 ```
 
 ## To read CSV in Ruby, start IRB:
