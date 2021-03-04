@@ -8,14 +8,15 @@ import time
 
 BED_COUNT = 2
 BATH_COUNT = 2
-MAX_PRICE = 200000
+MAX_PRICE = 800000
 
 PLUS = "+"
-NEW_CONSTRUCTION = "New construction"
-MULTI_FAMILY = "Multi-family home for sale"
 
-# Change this value
-FILTER = NEW_CONSTRUCTION
+HOME_TYPES = {
+  "new_construction": "New construction",
+  "multi_familty": "Multi-family home for sale",
+  "any": "any"
+}
 
 def clean(text):
     if text:
@@ -34,15 +35,11 @@ def get_headers():
     return headers
 
 
-def create_url(zipcode, filter, page):
+def create_url(zipcode, type, page):
     print("Getting data for page: {0}, bed count: {1}, bath count: {2}".format(page, BED_COUNT, BATH_COUNT))
     # Creating Zillow URL based on the filter.
-    if filter == "newest":
-        url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/days_sort".format(zipcode)
-    elif filter == "cheapest":
-        url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/pricea_sort/".format(zipcode)
     # Some multi homes do not specify bedroom count
-    elif filter == "Multi-family home for sale":
+    if type == "Multi-family home for sale":
         url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, page)
     else:
         url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}-_beds/{2}-_baths/{3}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, BED_COUNT, BATH_COUNT, page)
@@ -59,7 +56,7 @@ def save_to_file(response):
 def write_data_to_csv(data):
     # saving scraped data to csv.
 
-    with open("properties-%s.csv" % (zipcode), 'wb') as csvfile:
+    with open("properties/properties-%s.csv" % (zipcode), 'wb') as csvfile:
         fieldnames = ['title', 'address', 'city', 'state', 'postal_code', 'price', 'zestimate', 'zestimate_rent', 'price_to_rent_ratio', 'facts and features', 'real estate provider', 'url']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -81,7 +78,7 @@ def get_response(url):
             return response
     return None
 
-def get_data_from_json(raw_json_data):
+def get_data_from_json(raw_json_data, home_type):
     # getting data from json (type 2 of their A/B testing page)
     #print(raw_json_data)
     cleaned_data = clean(raw_json_data).replace('<!--', "").replace("-->", "")
@@ -111,7 +108,7 @@ def get_data_from_json(raw_json_data):
             zestimate_rent = properties.get('hdpData').get('homeInfo').get('rentZestimate')
             price_to_rent_ratio = ""
 
-            if title != FILTER:
+            if home_type != "any" and title != HOME_TYPES[home_type]:
               continue
 
             if unformatted_price > MAX_PRICE:
@@ -121,7 +118,7 @@ def get_data_from_json(raw_json_data):
             # if PLUS in price:
             #   continue
 
-            #print(properties)
+            # print(properties)
             if zestimate_rent and zestimate:
               price_to_rent_ratio = round(zestimate_rent / zestimate * 100, 2)
 
@@ -156,10 +153,10 @@ def unique(list):
             unique_list.append(x)
     return unique_list
 
-def parse(zipcode, filter=None):
+def parse(zipcode, home_type):
     final_data = []
     for page in range(1, 4):
-      url = create_url(zipcode, FILTER, page)
+      url = create_url(zipcode, parse, page)
       response = get_response(url)
 
       if not response:
@@ -176,7 +173,7 @@ def parse(zipcode, filter=None):
           print("Parsing from json data")
           # identified as type 2 page
           raw_json_data = parser.xpath('//script[@data-zrr-shared-data-key="mobileSearchPageStore"]//text()')
-          parsed_data = get_data_from_json(raw_json_data)
+          parsed_data = get_data_from_json(raw_json_data, home_type)
           #if parsed_data not in final_data:
           final_data.append(parsed_data)
     # The result is array of array, flatten it
@@ -189,17 +186,23 @@ if __name__ == "__main__":
     # Reading arguments
     argparser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     argparser.add_argument('zipcodes', help='')
+    argparser.add_argument('home_type', help='')
 
     args = argparser.parse_args()
     zipcodes = args.zipcodes
+    home_type = args.home_type
     print(zipcodes.split(","))
     #sort = args.sort
     for zipcode in zipcodes.split(","):
       # Need sleep statement, otherwsie they might block us
       time.sleep(3)
-      print ("Fetching data for %s" % (zipcode))
-      scraped_data = parse(zipcode, "")
-      print(scraped_data)
+      print ("Fetching data for %s home type in zip code: %s" % (home_type, zipcode))
+      scraped_data = parse(zipcode, home_type)
+      #print(scraped_data)
       if scraped_data:
-          print ("Writing data to output file")
+          print ("\n")
+          print ("Writing data to output file....Done.")
+          print ("\n")
+          print ("\n")
+          print ("###############################################################################################")
           write_data_to_csv(scraped_data)
