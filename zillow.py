@@ -6,9 +6,9 @@ import json
 from urllib.request import Request, urlopen
 import time
 
-BED_COUNT = 2
-BATH_COUNT = 2
-MAX_PRICE = 800000
+BED_COUNT = 1
+BATH_COUNT = 1
+MAX_PRICE = 700000
 
 PLUS = "+"
 
@@ -57,16 +57,16 @@ def write_data_to_csv(data):
     # saving scraped data to csv.
 
     with open("properties/properties-%s.csv" % (zipcode), 'wb') as csvfile:
-        fieldnames = ['title', 'address', 'city', 'state', 'postal_code', 'price', 'zestimate', 'zestimate_rent', 'price_to_rent_ratio', 'facts and features', 'real estate provider', 'url']
+        fieldnames = ['title', 'address', 'city', 'state', 'postal_code', 'price', 'zestimate', 'zestimate_rent', 'price_to_rent_ratio', 'facts_and_features', 'real_estate_provider', 'url', 'zone', 'zoning_description']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for row in data:
             writer.writerow(row)
 
 
-def get_response(url):
+def get_response(url, range_count):
     # Getting response from zillow.com
-    for i in range(5):
+    for i in range(range_count):
         response = requests.get(url, headers=get_headers())
         print("Status code received:", response.status_code)
         if response.status_code != 200:
@@ -79,8 +79,6 @@ def get_response(url):
     return None
 
 def get_data_from_json(raw_json_data, home_type):
-    # getting data from json (type 2 of their A/B testing page)
-    #print(raw_json_data)
     cleaned_data = clean(raw_json_data).replace('<!--', "").replace("-->", "")
     #print(cleaned_data)
     properties_list = []
@@ -117,8 +115,6 @@ def get_data_from_json(raw_json_data, home_type):
             # If there is plus at the end of the price this means it is not a final price
             # if PLUS in price:
             #   continue
-
-            # print(properties)
             if zestimate_rent and zestimate:
               price_to_rent_ratio = round(zestimate_rent / zestimate * 100, 2)
 
@@ -130,10 +126,14 @@ def get_data_from_json(raw_json_data, home_type):
                     'zestimate': zestimate,
                     'zestimate_rent': zestimate_rent,
                     'price_to_rent_ratio': price_to_rent_ratio,
-                    'facts and features': info,
-                    'real estate provider': broker,
+                    'facts_and_features': info,
+                    'real_estate_provider': broker,
                     'url': property_url,
                     'title': title}
+
+            extra_details = get_extra_details(property_url)
+            print("Extra details: ", extra_details)
+            data.update(extra_details)
             properties_list.append(data)
 
         return properties_list
@@ -141,6 +141,35 @@ def get_data_from_json(raw_json_data, home_type):
     except ValueError:
         print("Invalid json")
         return None
+
+def get_extra_details(property_url):
+    response = get_response(property_url, 1)
+
+    if not response:
+        print("Failed to fetch the page, please check `response.html` to see the response received from zillow.com.")
+        return None
+
+    req = Request(property_url, headers={'User-Agent': 'Mozilla/5.0'})
+    webpage = urlopen(req).read()
+    parser = html.fromstring(webpage)
+    print("Parsing details for more info...")
+
+    raw_html_data = parser.xpath('//div[@id="home-details-content"]//text()')
+    # print("Extra details:", raw_html_data)
+    extra_details = {
+      "zone": "Not found",
+      "zoning_description": "Not found"
+    }
+    try:
+      zoning_index = raw_html_data.index('Zoning: ')
+      zoning_desc_index = raw_html_data.index('Zoning description: ')
+      extra_details["zone"] = raw_html_data[zoning_index + 1]
+      extra_details["zoning_description"] = raw_html_data[zoning_desc_index + 1]
+    except ValueError:
+        print("Didn't find value")
+        return extra_details
+
+    return extra_details
 
 def unique(list):
     # intilize a null list
@@ -157,7 +186,7 @@ def parse(zipcode, home_type):
     final_data = []
     for page in range(1, 4):
       url = create_url(zipcode, parse, page)
-      response = get_response(url)
+      response = get_response(url, 5)
 
       if not response:
           print("Failed to fetch the page, please check `response.html` to see the response received from zillow.com.")
@@ -198,7 +227,7 @@ if __name__ == "__main__":
       time.sleep(3)
       print ("Fetching data for %s home type in zip code: %s" % (home_type, zipcode))
       scraped_data = parse(zipcode, home_type)
-      #print(scraped_data)
+      print(scraped_data)
       if scraped_data:
           print ("\n")
           print ("Writing data to output file....Done.")
