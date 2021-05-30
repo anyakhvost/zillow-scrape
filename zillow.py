@@ -8,13 +8,13 @@ import time
 
 BED_COUNT = 2
 BATH_COUNT = 2
-MAX_PRICE = 800000
+MAX_PRICE = 500000
 
 PLUS = "+"
 
 HOME_TYPES = {
   "new_construction": "New construction",
-  "multi_familty": "Multi-family home for sale",
+  "multi_family": "Multi-family home for sale",
   "any": "any"
 }
 
@@ -39,7 +39,7 @@ def create_url(zipcode, type, page):
     print("Getting data for page: {0}, bed count: {1}, bath count: {2}".format(page, BED_COUNT, BATH_COUNT))
     # Creating Zillow URL based on the filter.
     # Some multi homes do not specify bedroom count
-    if type == "Multi-family home for sale":
+    if type == "multi_family":
         url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, page)
     else:
         url = "https://www.zillow.com/homes/for_sale/{0}_rb/{1}-_beds/{2}-_baths/{3}_p/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode, BED_COUNT, BATH_COUNT, page)
@@ -156,7 +156,7 @@ def unique(list):
 def parse(zipcode, home_type):
     final_data = []
     for page in range(1, 4):
-      url = create_url(zipcode, parse, page)
+      url = create_url(zipcode, home_type, page)
       response = get_response(url)
 
       if not response:
